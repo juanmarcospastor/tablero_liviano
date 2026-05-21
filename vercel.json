@@ -1,8 +1,8 @@
 {
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/app.py"
+      "src": "api/**/*.py",
+      "use": "@vercel/python"
     }
   ]
 }

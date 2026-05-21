@@ -1,16 +1,14 @@
 # Tablero Económico Liviano
 
-Versión mínima del tablero para publicar en Vercel.
+Versión liviana del tablero, lista para desplegar en Vercel usando una función Python serverless.
 
 Incluye:
 
-- Flask
-- Jinja templates
-- Dólar desde ArgentinaDatos
-- Riesgo País desde ArgentinaDatos
-- Inflación mensual desde ArgentinaDatos
-- WTI y Brent desde Yahoo Finance
-- Calendario simple desde CSV
+- Consulta a APIs externas con Python
+- JSON serverless en `api/data.py`
+- Frontend estático en `index.html`
+- Gráficas con Plotly
+- Calendario desde `data/calendario.csv`
 
 ## Ejecutar localmente
 
@@ -27,18 +25,26 @@ Abrir:
 http://127.0.0.1:5000
 ```
 
-## Publicar en Vercel
+## Deploy en Vercel
 
 1. Subir el proyecto a GitHub.
-2. Entrar a Vercel.
-3. Importar el repositorio.
-4. Hacer Deploy.
+2. Ir a Vercel y crear un nuevo proyecto.
+3. Seleccionar el repositorio.
+4. Vercel detectará la función Python en `api/data.py` y servirá `index.html` como sitio estático.
 
-## Estructura
+La ruta de datos en producción será:
 
 ```text
+/api/data
+```
+
+## Estructura de archivos
+
+```text
+api/data.py
 app.py
-templates/index.html
+index.html
+lib.py
 static/style.css
 data/calendario.csv
 requirements.txt

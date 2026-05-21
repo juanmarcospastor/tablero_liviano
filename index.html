@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tablero Económico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="static/style.css">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+<header class="header">
+    <div>
+        <h1>Tablero Económico</h1>
+        <p>Versión liviana online · Vercel</p>
+    </div>
+</header>
+<main class="container">
+    <section class="grid">
+        <article class="card">
+            <div class="card-header">
+                <h2>Dólar · ArgentinaDatos</h2>
+                <span class="tag">API</span>
+            </div>
+            <div id="dolares-contenido">
+                <p class="muted">Cargando cotizaciones...</p>
+            </div>
+        </article>
+        <article class="card">
+            <div class="card-header">
+                <h2>Riesgo País</h2>
+                <span class="tag">Argentina</span>
+            </div>
+            <div class="big-number" id="riesgo-valor">-</div>
+            <p class="muted" id="riesgo-fecha">Cargando...</p>
+        </article>
+        <article class="card">
+            <div class="card-header">
+                <h2>Inflación mensual</h2>
+                <span class="tag">INDEC / API</span>
+            </div>
+            <div class="big-number" id="inflacion-valor">-</div>
+            <p class="muted" id="inflacion-fecha">Cargando...</p>
+            <div id="grafico-inflacion" class="chart"></div>
+        </article>
+    </section>
+    <section class="grid">
+        <article class="card">
+            <div class="card-header">
+                <h2>Petróleo WTI</h2>
+                <span class="tag">Yahoo Finance</span>
+            </div>
+            <div class="big-number small" id="wti-valor">-</div>
+            <div id="grafico-wti" class="chart"></div>
+        </article>
+        <article class="card">
+            <div class="card-header">
+                <h2>Petróleo Brent</h2>
+                <span class="tag">Yahoo Finance</span>
+            </div>
+            <div class="big-number small" id="brent-valor">-</div>
+            <div id="grafico-brent" class="chart"></div>
+        </article>
+        <article class="card">
+            <div class="card-header">
+                <h2>Calendario simple</h2>
+                <span class="tag">CSV</span>
+            </div>
+            <div id="calendario-contenido">
+                <p class="muted">Cargando calendario...</p>
+            </div>
+        </article>
+    </section>
+</main>
+<script>
+    function renderTablaDolares(dolares) {
+        if (!dolares || dolares.length === 0) {
+            return '<p class="muted">No se pudieron obtener cotizaciones.</p>';
+        }
+        const filas = dolares.map(d => `
+            <tr>
+                <td>${d.nombre}</td>
+                <td>${d.compra}</td>
+                <td>${d.venta}</td>
+            </tr>
+        `).join("");
+
+        return `
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Compra</th>
+                            <th>Venta</th>
+                        </tr>
+                    </thead>
+                    <tbody>${filas}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function renderCalendario(eventos) {
+        if (!eventos || eventos.length === 0) {
+            return `
+                <p class="muted">
+                    No hay calendario cargado. Podés agregar un archivo
+                    <code>data/calendario.csv</code>.
+                </p>
+            `;
+        }
+        return eventos.map(e => `
+            <div class="event">
+                <strong>${e.fecha}</strong>
+                <span>${e.evento}</span>
+                ${e.pais ? `<small>${e.pais}</small>` : ""}
+            </div>
+        `).join("");
+    }
+
+    function plotLinea(divId, serie, tituloY) {
+        if (!serie || serie.length === 0) {
+            return;
+        }
+        const fechas = serie.map(d => d.fecha);
+        const valores = serie.map(d => d.valor);
+        const trace = {
+            x: fechas,
+            y: valores,
+            type: "scatter",
+            mode: "lines+markers",
+            line: { width: 2 },
+            marker: { size: 5 }
+        };
+        const layout = {
+            margin: { l: 45, r: 15, t: 15, b: 40 },
+            height: 230,
+            yaxis: { title: tituloY },
+            xaxis: { tickangle: -35 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(0,0,0,0)",
+            font: { size: 11 }
+        };
+        const config = { displayModeBar: false, responsive: true };
+        Plotly.newPlot(divId, [trace], layout, config);
+    }
+
+    async function cargarDatos() {
+        try {
+            const respuesta = await fetch('/api/data');
+            if (!respuesta.ok) {
+                throw new Error('Error al cargar datos');
+            }
+            const data = await respuesta.json();
+            document.getElementById('dolares-contenido').innerHTML = renderTablaDolares(data.dolares);
+            document.getElementById('riesgo-valor').textContent = data.riesgo_pais.valor;
+            document.getElementById('riesgo-fecha').textContent = `Último dato disponible: ${data.riesgo_pais.fecha}`;
+            document.getElementById('inflacion-valor').textContent = data.inflacion.mensual;
+            document.getElementById('inflacion-fecha').textContent = `Último dato disponible: ${data.inflacion.fecha}`;
+            document.getElementById('wti-valor').textContent = data.commodities.wti.valor;
+            document.getElementById('brent-valor').textContent = data.commodities.brent.valor;
+            document.getElementById('calendario-contenido').innerHTML = renderCalendario(data.calendario);
+            plotLinea('grafico-inflacion', data.inflacion.serie, '% mensual');
+            plotLinea('grafico-wti', data.commodities.wti.serie, 'USD');
+            plotLinea('grafico-brent', data.commodities.brent.serie, 'USD');
+        } catch (error) {
+            document.getElementById('dolares-contenido').innerHTML = `<p class="muted">No se pudieron cargar los datos.</p>`;
+            document.getElementById('calendario-contenido').innerHTML = `<p class="muted">No se pudieron cargar los datos.</p>`;
+            console.error(error);
+        }
+    }
+
+    cargarDatos();
+</script>
+</body>
+</html>
