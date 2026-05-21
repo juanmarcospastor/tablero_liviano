@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tablero Económico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+
+<body>
+
+<header class="header">
+    <div>
+        <h1>Tablero Económico</h1>
+        <p>Versión liviana online · Flask + Vercel</p>
+    </div>
+</header>
+
+<main class="container">
+
+    <section class="grid">
+
+        <article class="card">
+            <div class="card-header">
+                <h2>Dólar · ArgentinaDatos</h2>
+                <span class="tag">API</span>
+            </div>
+
+            {% if dolares %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Compra</th>
+                                <th>Venta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in dolares %}
+                            <tr>
+                                <td>{{ d.nombre }}</td>
+                                <td>{{ d.compra }}</td>
+                                <td>{{ d.venta }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="muted">No se pudieron obtener cotizaciones.</p>
+            {% endif %}
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <h2>Riesgo País</h2>
+                <span class="tag">Argentina</span>
+            </div>
+
+            <div class="big-number">
+                {{ riesgo_pais.valor }}
+            </div>
+
+            <p class="muted">Último dato disponible: {{ riesgo_pais.fecha }}</p>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <h2>Inflación mensual</h2>
+                <span class="tag">INDEC / API</span>
+            </div>
+
+            <div class="big-number">
+                {{ inflacion.mensual }}
+            </div>
+
+            <p class="muted">Último dato disponible: {{ inflacion.fecha }}</p>
+
+            <div id="grafico-inflacion" class="chart"></div>
+        </article>
+
+    </section>
+
+    <section class="grid">
+
+        <article class="card">
+            <div class="card-header">
+                <h2>Petróleo WTI</h2>
+                <span class="tag">Yahoo Finance</span>
+            </div>
+
+            <div class="big-number small">
+                {{ commodities.wti.valor }}
+            </div>
+
+            <div id="grafico-wti" class="chart"></div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <h2>Petróleo Brent</h2>
+                <span class="tag">Yahoo Finance</span>
+            </div>
+
+            <div class="big-number small">
+                {{ commodities.brent.valor }}
+            </div>
+
+            <div id="grafico-brent" class="chart"></div>
+        </article>
+
+        <article class="card">
+            <div class="card-header">
+                <h2>Calendario simple</h2>
+                <span class="tag">CSV</span>
+            </div>
+
+            {% if calendario %}
+                <div class="event-list">
+                    {% for e in calendario %}
+                    <div class="event">
+                        <strong>{{ e.fecha }}</strong>
+                        <span>{{ e.evento }}</span>
+                        {% if e.pais %}
+                            <small>{{ e.pais }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="muted">
+                    No hay calendario cargado. Podés agregar un archivo
+                    <code>data/calendario.csv</code>.
+                </p>
+            {% endif %}
+        </article>
+
+    </section>
+
+</main>
+
+<script>
+    const inflacionSerie = {{ inflacion.serie | tojson }};
+    const wtiSerie = {{ commodities.wti.serie | tojson }};
+    const brentSerie = {{ commodities.brent.serie | tojson }};
+
+    function plotLinea(divId, serie, tituloY) {
+        if (!serie || serie.length === 0) {
+            return;
+        }
+
+        const fechas = serie.map(d => d.fecha);
+        const valores = serie.map(d => d.valor);
+
+        const trace = {
+            x: fechas,
+            y: valores,
+            type: "scatter",
+            mode: "lines+markers",
+            line: {
+                width: 2
+            },
+            marker: {
+                size: 5
+            }
+        };
+
+        const layout = {
+            margin: {
+                l: 45,
+                r: 15,
+                t: 15,
+                b: 40
+            },
+            height: 230,
+            yaxis: {
+                title: tituloY
+            },
+            xaxis: {
+                tickangle: -35
+            },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(0,0,0,0)",
+            font: {
+                size: 11
+            }
+        };
+
+        const config = {
+            displayModeBar: false,
+            responsive: true
+        };
+
+        Plotly.newPlot(divId, [trace], layout, config);
+    }
+
+    plotLinea("grafico-inflacion", inflacionSerie, "% mensual");
+    plotLinea("grafico-wti", wtiSerie, "USD");
+    plotLinea("grafico-brent", brentSerie, "USD");
+</script>
+
+</body>
+</html>
