@@ -25,8 +25,14 @@
 
         <article class="card">
             <div class="card-header">
-                <h2>Dólar · ArgentinaDatos</h2>
-                <span class="tag">API</span>
+                <div>
+                    <h2>Cotizaciones dólar (Infobae)</h2>
+                    <div class="card-subtitle">
+                        Fuente:
+                        <a href="{{ fuente }}" target="_blank" rel="noopener">{{ fuente }}</a>
+                    </div>
+                </div>
+                <span class="tag">Divisas</span>
             </div>
 
             {% if dolares %}
@@ -37,6 +43,7 @@
                                 <th>Tipo</th>
                                 <th>Compra</th>
                                 <th>Venta</th>
+                                <th>Variación</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -45,10 +52,15 @@
                                 <td>{{ d.nombre }}</td>
                                 <td>{{ d.compra }}</td>
                                 <td>{{ d.venta }}</td>
+                                <td>{{ d.variacion }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <div class="card-subtitle mt-3">
+                    Actualiza automáticamente cada pocos minutos.
                 </div>
             {% else %}
                 <p class="muted">No se pudieron obtener cotizaciones.</p>
